@@ -11,5 +11,5 @@ This version aims to add more features such as
 ## Project Info
 This project was created as a simulation for the movement system 
 of an autonomous period of an omnidirectional robot for the 
-First Tech Challange. It is for testing the autonomous for 
+First Tech Challenge. It is for testing the autonomous for 
 the Riptide Robotics Team, No. 13046.
