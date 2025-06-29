@@ -13,6 +13,12 @@ from functools import partial
 # because I'll probably need it
 import math
 
+# this was in the previous version
+# idk why
+# might be useful ¯\_(ツ)_/¯
+# I should have probably done comments
+# plt.rcParams['animation.writer'] = 'ffmpeg'
+
 # --------------- CLASSES --------------- #
 
 class Animation:
