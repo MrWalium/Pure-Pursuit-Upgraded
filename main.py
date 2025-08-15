@@ -107,70 +107,157 @@ class Animation:
 
 class Robot:
     def __init__(self, x: float = 0, y: float = 0, heading: float = 0, maxVelocity: float = 1,
-                 maxAcceleration: float = 1, scaling: float = 1, isdiffy: bool = True):
+                 maxAcceleration: float = 1, scaling: float = 1, isdiffy: bool = False):
         self.x = x
         self.y = y
         self.heading = heading
         self.maxVelocity = maxVelocity
         self.maxAcceleration = maxAcceleration
+        self.velocityX = 0
+        self.velocityY = 0
         # For drawing
         # To scale the robot shown by a factor of scaling
         self.scaling = scaling
         self.isdiffy = isdiffy
 
+    # --- Helpers --- #
+
+    def getSpeed(self):
+        return math.sqrt(self.velocityX * self.velocityX + self.velocityY * self.velocityY)
+
+    # --- Drawing and Updates --- #
+    def update(self):
+        pass
+
     def draw(self, ax):
+        """
+        Calls the update function, and draws the robot, either with a holonomic or differential swerve drivetrain.
+
+        Args:
+            ax: the axis to add patches to so the shapes can be drawn
+        """
+        self.update()
         if not self.isdiffy:
             body = plt.Rectangle((self.x - 0.15 * self.scaling, self.y - 0.25 * self.scaling),
-                             width=0.3 * self.scaling,
-                             height=0.5 * self.scaling, angle=self.heading,
-                             rotation_point='center', lw=None, color='darkslategrey')
+                                 width=0.30 * self.scaling,
+                                 height=0.5 * self.scaling, angle=self.heading,
+                                 rotation_point='center', lw=None, color='darkslategrey')
             # r=right, l=left, f=front, b=back
             wheelfr = plt.Rectangle((self.x + 0.25 * self.scaling, self.y + 0.25 * self.scaling),
                                     width=-0.1 * self.scaling,
                                     height=-0.2 * self.scaling, angle=self.heading,
-                                    rotation_point='center', lw=None, color='black')
+                                    rotation_point=(self.x, self.y), lw=None, color='black')
             wheelbr = plt.Rectangle((self.x + 0.25 * self.scaling, self.y - 0.25 * self.scaling),
                                     width=-0.1 * self.scaling,
                                     height=0.2 * self.scaling, angle=self.heading,
-                                    rotation_point='center', lw=None, color='black')
+                                    rotation_point=(self.x, self.y), lw=None, color='black')
             wheelfl = plt.Rectangle((self.x - 0.25 * self.scaling, self.y + 0.25 * self.scaling),
-                             width=0.1 * self.scaling,
-                             height=-0.2 * self.scaling, angle=self.heading,
-                             rotation_point='center', lw=None, color='black')
+                                    width=0.1 * self.scaling,
+                                    height=-0.2 * self.scaling, angle=self.heading,
+                                    rotation_point=(self.x, self.y), lw=None, color='black')
             wheelbl = plt.Rectangle((self.x - 0.25 * self.scaling, self.y - 0.25 * self.scaling),
                                     width=0.1 * self.scaling,
                                     height=0.2 * self.scaling, angle=self.heading,
-                                    rotation_point='center', lw=None, color='black')
+                                    rotation_point=(self.x, self.y), lw=None, color='black')
+            eyer = plt.Circle(
+                (self.x + 0.19235384061 * self.scaling * math.cos(math.radians(self.heading + 64)), self.y +
+                 0.19235384061 * self.scaling *
+                 math.sin(math.radians(self.heading + 64))), radius=0.05 * self.scaling,
+                color='white', lw=None)
+            eyel = plt.Circle(
+                (self.x + 0.19235384061 * self.scaling * math.cos(math.radians(self.heading + 110)), self.y +
+                 0.19235384061 * self.scaling *
+                 math.sin(math.radians(self.heading + 110))), radius=0.05 * self.scaling,
+                color='white', lw=None)
+            pupilr = plt.Circle(
+                (self.x + 0.19235384061 * self.scaling * math.cos(math.radians(self.heading + 64)), self.y +
+                 0.19235384061 * self.scaling *
+                 math.sin(math.radians(self.heading + 64))),
+                radius=0.02 * self.scaling,
+                color='black', lw=None)
+            pupill = plt.Circle(
+                (self.x + 0.19235384061 * self.scaling * math.cos(math.radians(self.heading + 110)), self.y +
+                 0.19235384061 * self.scaling *
+                 math.sin(math.radians(self.heading + 110))),
+                radius=0.02 * self.scaling,
+                color='black', lw=None)
 
         else:
             body = plt.Rectangle((self.x - 0.25 * self.scaling, self.y - 0.25 * self.scaling),
-                             width=0.5 * self.scaling,
-                             height=0.5 * self.scaling, angle=self.heading,
-                             rotation_point='center', lw=None, color='darkslategrey')
+                                 width=0.5 * self.scaling,
+                                 height=0.5 * self.scaling, angle=self.heading,
+                                 rotation_point='center', lw=None, color='darkslategrey')
             # r=right, l=left, f=front, b=back
+            # so the wheels can rotate
+            wheelHolefr = plt.Circle((self.x + 0.24234531148 * math.cos(math.radians(self.heading+45)) * self.scaling,
+                                      self.y + 0.24234531148 * math.sin(math.radians(self.heading+45)) * self.scaling),
+                                     radius=0.055, color='darkgrey')
+            wheelHolebr = plt.Circle((self.x + 0.24234531148 * math.cos(math.radians(self.heading+315)) * self.scaling,
+                                      self.y + 0.24234531148 * math.sin(math.radians(self.heading+315)) * self.scaling),
+                                     radius=0.055, color='darkgrey')
+            wheelHolefl = plt.Circle((self.x + 0.23234531148 * math.cos(math.radians(self.heading+133)) * self.scaling,
+                                      self.y + 0.23234531148 * math.sin(math.radians(self.heading+133)) * self.scaling),
+                                     radius=0.055, color='darkgrey')
+            wheelHolebl = plt.Circle((self.x + 0.23234531148 * math.cos(math.radians(self.heading+226)) * self.scaling,
+                                      self.y + 0.23234531148 * math.sin(math.radians(self.heading+226)) * self.scaling),
+                                     radius=0.055, color='darkgrey')
             wheelfr = plt.Rectangle((self.x + 0.1875 * self.scaling, self.y + (0.12) * self.scaling),
                                     width=-0.05 * self.scaling,
                                     height=0.1 * self.scaling, angle=self.heading,
-                                    rotation_point='center', lw=None, color='black')
+                                    rotation_point=(self.x, self.y), lw=None, color='black')
             wheelbr = plt.Rectangle((self.x + 0.1875 * self.scaling, self.y - (0.12) * self.scaling),
                                     width=-0.05 * self.scaling,
                                     height=-0.1 * self.scaling, angle=self.heading,
-                                    rotation_point='center', lw=None, color='black')
+                                    rotation_point=(self.x, self.y), lw=None, color='black')
             wheelfl = plt.Rectangle((self.x - 0.1875 * self.scaling, self.y + (0.12) * self.scaling),
                                     width=0.05 * self.scaling,
                                     height=0.1 * self.scaling, angle=self.heading,
-                                    rotation_point='center', lw=None, color='black')
+                                    rotation_point=(self.x, self.y), lw=None, color='black')
             wheelbl = plt.Rectangle((self.x - 0.1875 * self.scaling, self.y - (0.12) * self.scaling),
                                     width=0.05 * self.scaling,
                                     height=-0.1 * self.scaling, angle=self.heading,
-                                    rotation_point='center', lw=None, color='black')
+                                    rotation_point=(self.x, self.y), lw=None, color='black')
+            eyer = plt.Circle((self.x + 0.09848857801 * self.scaling * math.cos(math.radians(self.heading+24)), self.y +
+                               0.09848857801 * self.scaling * math.sin(math.radians(self.heading+24))),
+                              radius=0.05 * self.scaling,
+                              color='white', lw=None)
+            eyel = plt.Circle((self.x + 0.08762257748 * self.scaling * math.cos(math.radians(self.heading+156)), self.y +
+                               0.08762257748 * self.scaling * math.sin(math.radians(self.heading+156))),
+                              radius=0.05 * self.scaling,
+                              color='white', lw=None)
+            pupilr = plt.Circle((self.x + 0.09848857801 * self.scaling * math.cos(math.radians(self.heading+24)), self.y +
+                               0.09848857801 * self.scaling * math.sin(math.radians(self.heading+24))),
+                                radius=0.02 * self.scaling,
+                                color='black', lw=None)
+            pupill = plt.Circle((self.x + 0.08762257748 * self.scaling * math.cos(math.radians(self.heading+156)), self.y +
+                               0.08762257748 * self.scaling * math.sin(math.radians(self.heading+156))),
+                                radius=0.02 * self.scaling,
+                                color='black', lw=None)
+            frontTriangle = plt.Polygon(((self.x + 0.24 * math.cos(math.radians(self.heading+90)) * self.scaling,
+                                          self.y + 0.24 * math.sin(math.radians(self.heading+90)) * self.scaling),
+                                         (self.x + 0.18172781845 * math.cos(math.radians(self.heading+82)) * self.scaling,
+                                          self.y + 0.18172781845 * math.sin(math.radians(self.heading+82)) * self.scaling),
+                                         (self.x + 0.18172781845 * math.cos(math.radians(self.heading+98)) * self.scaling,
+                                          self.y + 0.18172781845 * math.sin(math.radians(self.heading+98)) * self.scaling)),
+                                        fill=True, color='firebrick')
+
+        centerPt = plt.Circle((self.x, self.y), radius=0.01 * self.scaling, color='black')
         ax.add_patch(body)
+        ax.add_patch(centerPt)
+        if self.isdiffy:
+            ax.add_patch(frontTriangle)
+            ax.add_patch(wheelHolefr)
+            ax.add_patch(wheelHolebr)
+            ax.add_patch(wheelHolefl)
+            ax.add_patch(wheelHolebl)
         ax.add_patch(wheelfr)
         ax.add_patch(wheelbr)
         ax.add_patch(wheelfl)
         ax.add_patch(wheelbl)
-
-
+        ax.add_patch(eyer)
+        ax.add_patch(eyel)
+        ax.add_patch(pupilr)
+        ax.add_patch(pupill)
 
 
 # do I really need a comment?
