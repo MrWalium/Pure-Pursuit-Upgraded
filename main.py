@@ -109,7 +109,7 @@ class Animation:
 
 class Robot:
     def __init__(self, ax, x: float = 0, y: float = 0, heading: float = 0, maxVelocity: float = 0.1,
-                 maxAcceleration: float = 1, maxTurnVelocity: float = 1, scaling: float = 1, isdiffy: bool = False):
+                 maxAcceleration: float = 1, maxTurnVelocity: float = 1, scaling: float = 1, isdiffy: bool = True):
         # the plot axis
         self.ax = ax
 
@@ -125,8 +125,8 @@ class Robot:
         self.maxTurnVelocity = maxTurnVelocity
 
         # I'm using polar coordinates for simplicity
-        self.velocity = 0
-        self.velocityAngle = 45
+        self.velocity = 0.1
+        self.velocityAngle = 0
 
         # for drawing
         # to scale the robot shown by a factor of scaling
@@ -201,7 +201,7 @@ class Robot:
     def update(self):
         self.velocity = self.maxVelocity if self.velocity > self.maxVelocity else self.velocity
         self.velocityAngle += 3
-        self.dx = self.velocity * math.sin(math.radians(self.velocityAngle))
+        self.dx = self.velocity * math.sin(math.radians(-self.velocityAngle))
         self.dy = self.velocity * math.cos(math.radians(self.velocityAngle))
         self.x += self.dx
         self.y += self.dy
@@ -228,11 +228,17 @@ class Robot:
                              width=0.1 * self.scaling,
                              height=0.2 * self.scaling, angle=self.heading, lw=0.1,
                              color='black', hatch='////////', fill=False)
-            self.wheelbr.set(xy=(self.x + 0.15, self.y - 0.25),
+            self.wheelbr.set(xy=(self.x + (0.25 * math.cos(math.radians(self.heading + 323.1301024)) - 0.05) *
+                                 self.scaling,
+                                 self.y + (0.25 * math.sin(math.radians(self.heading + 323.1301024)) - 0.1) *
+                                 self.scaling),
                              width=0.1 * self.scaling,
                              height=0.2 * self.scaling, angle=self.heading, lw=0.1,
                              color='black', hatch='\\\\\\\\\\\\\\\\\\', fill=False)
-            self.wheelfl.set(xy=(self.x - 0.25, self.y + 0.05),
+            self.wheelfl.set(xy=(self.x + (0.25 * math.cos(math.radians(self.heading + 143.1301024)) - 0.05) *
+                                 self.scaling,
+                                 self.y + (0.25 * math.sin(math.radians(self.heading + 143.1301024)) - 0.1) *
+                                 self.scaling),
                              width=0.1 * self.scaling,
                              height=0.2 * self.scaling, angle=self.heading, lw=0.1,
                              color='black', hatch='\\\\\\\\\\\\\\\\\\', fill=False)
@@ -297,16 +303,16 @@ class Robot:
                             math.radians(self.heading + 226)) * self.scaling),
                 radius=0.055 * self.scaling, visible=True)
             self.wheelfr.set(xy=(self.x + 0.1875 * self.scaling, self.y + (0.12) * self.scaling),
-                             width=-0.05 * self.scaling,
+                             width=-0.05 * self.scaling, angle=self.velocityAngle,
                              height=0.1 * self.scaling, lw=None, fill=True, visible=True)
             self.wheelbr.set(xy=(self.x + 0.1875 * self.scaling, self.y - (0.12) * self.scaling),
-                             width=-0.05 * self.scaling,
+                             width=-0.05 * self.scaling, angle=self.velocityAngle,
                              height=-0.1 * self.scaling, lw=None, fill=True)
             self.wheelfl.set(xy=(self.x - 0.1875 * self.scaling, self.y + (0.12) * self.scaling),
-                             width=0.05 * self.scaling,
+                             width=0.05 * self.scaling, angle=self.velocityAngle,
                              height=0.1 * self.scaling, lw=None, fill=True)
             self.wheelbl.set(xy=(self.x - 0.1875 * self.scaling, self.y - (0.12) * self.scaling),
-                             width=0.05 * self.scaling,
+                             width=0.05 * self.scaling, angle=self.velocityAngle,
                              height=-0.1 * self.scaling, lw=None, fill=True)
             self.eyer.set(
                 center=(self.x + 0.09848857801 * self.scaling * math.cos(math.radians(self.heading + 24)), self.y +
@@ -336,7 +342,7 @@ class Robot:
                                             math.radians(self.heading + 98)) * self.scaling)), visible=True)
             self.centerPt.set(center=(self.x, self.y))
 
-            return self.body, self.wheelfr, self.wheelbr, self.wheelfl, self.wheelbl, self.eyer, self.eyel, self.pupilr, self.pupill, self.frontTriangle, self.wheelHolefr, self.wheelHolebr, self.wheelHolefl, self.wheelHolebl, self.centerPt
+            return self.body, self.wheelHolefr, self.wheelHolebr, self.wheelHolefl, self.wheelHolebl, self.wheelfr, self.wheelbr, self.wheelfl, self.wheelbl, self.eyer, self.eyel, self.pupilr, self.pupill, self.frontTriangle, self.centerPt
 
 
 # do I really need a comment?
