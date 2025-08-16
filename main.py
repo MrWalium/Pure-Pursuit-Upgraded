@@ -101,17 +101,19 @@ class Animation:
         # Remember to update the path
         anim = animation.FuncAnimation(fig=self.fig, func=partial(updateFrame, ax=self.ax, robot=self.robot,
                                                                   trailX=self.trailX, trailY=self.trailY,
-                                                                  trail=self.trail), blit=True, cache_frame_data=False)
+                                                                  trail=self.trail), blit=True, cache_frame_data=False,
+                                       interval=10)
 
         plt.show()
 
 
 class Robot:
-    def __init__(self, ax, x: float = 0, y: float = 0, heading: float = 360, maxVelocity: float = 0.3,
+    def __init__(self, ax, x: float = 0, y: float = 0, heading: float = 0, maxVelocity: float = 0.1,
                  maxAcceleration: float = 1, maxTurnVelocity: float = 1, scaling: float = 1, isdiffy: bool = False):
         # the plot axis
         self.ax = ax
 
+        # positional variables
         self.x = x
         self.y = y
         # change in x, for drawing robot
@@ -123,121 +125,35 @@ class Robot:
         self.maxTurnVelocity = maxTurnVelocity
 
         # I'm using polar coordinates for simplicity
-        self.velocity = 0.1
-        self.velocityAngle = 0
+        self.velocity = 0
+        self.velocityAngle = 45
 
         # for drawing
         # to scale the robot shown by a factor of scaling
         self.scaling = scaling
         self.isdiffy = isdiffy
 
-        # initially drawing the robot
+        # initializing robot shapes
 
-        if not self.isdiffy:
-            self.body = plt.Rectangle((-0.25 * self.scaling, -0.25 * self.scaling),
-                                      width=0.30 * self.scaling,
-                                      height=0.5 * self.scaling, angle=self.heading,
-                                      rotation_point='center', lw=None, color='darkslategrey')
-            # r=right, l=left, f=front, b=back
-            self.wheelfr = plt.Rectangle((self.x + 0.25 * self.scaling, self.y + 0.25 * self.scaling),
-                                         width=-0.1 * self.scaling,
-                                         height=-0.2 * self.scaling, angle=self.heading,
-                                         rotation_point=(self.x, self.y), lw=0.1,
-                                         color='black', hatch='////////', fill=False)
-            self.wheelbr = plt.Rectangle((self.x + 0.25 * self.scaling, self.y - 0.25 * self.scaling),
-                                         width=-0.1 * self.scaling,
-                                         height=0.2 * self.scaling, angle=self.heading,
-                                         rotation_point=(self.x, self.y), lw=0.1,
-                                         color='black', hatch='\\\\\\\\\\\\\\\\\\', fill=False)
-            self.wheelfl = plt.Rectangle((self.x - 0.25 * self.scaling, self.y + 0.25 * self.scaling),
-                                         width=0.1 * self.scaling,
-                                         height=-0.2 * self.scaling, angle=self.heading,
-                                         rotation_point=(self.x, self.y), lw=0.1,
-                                         color='black', hatch='\\\\\\\\\\\\\\\\\\', fill=False)
-            self.wheelbl = plt.Rectangle((self.x - 0.25 * self.scaling, self.y - 0.25 * self.scaling),
-                                         width=0.1 * self.scaling,
-                                         height=0.2 * self.scaling, angle=self.heading,
-                                         rotation_point=(self.x, self.y), lw=0.1,
-                                         color='black', hatch='////////', fill=False)
-            self.eyer = plt.Circle(
-                (self.x + 0.19235384061 * self.scaling * math.cos(math.radians(self.heading + 64)), self.y +
-                 0.19235384061 * self.scaling *
-                 math.sin(math.radians(self.heading + 64))), radius=0.05 * self.scaling,
-                color='white', lw=None)
-            self.eyel = plt.Circle(
-                (self.x + 0.19235384061 * self.scaling * math.cos(math.radians(self.heading + 110)), self.y +
-                 0.19235384061 * self.scaling *
-                 math.sin(math.radians(self.heading + 110))), radius=0.05 * self.scaling,
-                color='white', lw=None)
-            self.pupilr = plt.Circle(
-                (self.x + 0.19235384061 * self.scaling * math.cos(math.radians(self.heading + 64)), self.y +
-                 0.19235384061 * self.scaling *
-                 math.sin(math.radians(self.heading + 64))),
-                radius=0.02 * self.scaling,
-                color='black', lw=None)
-            self.pupill = plt.Circle(
-                (self.x + 0.19235384061 * self.scaling * math.cos(math.radians(self.heading + 110)), self.y +
-                 0.19235384061 * self.scaling *
-                 math.sin(math.radians(self.heading + 110))),
-                radius=0.02 * self.scaling,
-                color='black', lw=None)
+        self.body = plt.Rectangle((0, 0), width=0, height=0, angle=self.heading,
+                                  rotation_point='center', lw=None, color='darkslategrey')
+        # r=right, l=left, f=front, b=back
+        self.wheelfr = plt.Rectangle((0, 0),width=0, height=0, angle=self.heading,
+                                     rotation_point='center', lw=None, color='black')
+        self.wheelbr = plt.Rectangle((0, 0), width=0, height=0, angle=self.heading,
+                                     rotation_point='center', lw=None, color='black')
+        self.wheelfl = plt.Rectangle((0, 0),width=0, height=0, angle=self.heading,
+                                     rotation_point='center', lw=None, color='black')
+        self.wheelbl = plt.Rectangle((0, 0), width=0, height=0, angle=self.heading,
+                                     rotation_point='center', lw=None, color='black')
+        self.eyer = plt.Circle((0, 0), radius=0.05 * self.scaling, color='white', lw=None)
+        self.eyel = plt.Circle((0, 0), radius=0.05 * self.scaling,color='white', lw=None)
+        self.pupilr = plt.Circle((0, 0), radius=0.02 * self.scaling, color='black', lw=None)
+        self.pupill = plt.Circle((0, 0), radius=0.02 * self.scaling, color='black', lw=None)
 
-        else:
-            self.body = plt.Rectangle((self.x - 0.25 * self.scaling, self.y - 0.25 * self.scaling),
-                                      width=0.5 * self.scaling,
-                                      height=0.5 * self.scaling, angle=self.heading,
-                                      rotation_point='center', lw=None, color='darkslategrey')
-            # r=right, l=left, f=front, b=back
-            self.wheelfr = plt.Rectangle((self.x + 0.1875 * self.scaling, self.y + (0.12) * self.scaling),
-                                         width=-0.05 * self.scaling,
-                                         height=0.1 * self.scaling, angle=self.heading,
-                                         rotation_point=(self.x, self.y), lw=None, color='black')
-            self.wheelbr = plt.Rectangle((self.x + 0.1875 * self.scaling, self.y - (0.12) * self.scaling),
-                                         width=-0.05 * self.scaling,
-                                         height=-0.1 * self.scaling, angle=self.heading,
-                                         rotation_point=(self.x, self.y), lw=None, color='black')
-            self.wheelfl = plt.Rectangle((self.x - 0.1875 * self.scaling, self.y + (0.12) * self.scaling),
-                                         width=0.05 * self.scaling,
-                                         height=0.1 * self.scaling, angle=self.heading,
-                                         rotation_point=(self.x, self.y), lw=None, color='black')
-            self.wheelbl = plt.Rectangle((self.x - 0.1875 * self.scaling, self.y - (0.12) * self.scaling),
-                                         width=0.05 * self.scaling,
-                                         height=-0.1 * self.scaling, angle=self.heading,
-                                         rotation_point=(self.x, self.y), lw=None, color='black')
-            self.eyer = plt.Circle(
-                (self.x + 0.09848857801 * self.scaling * math.cos(math.radians(self.heading + 24)), self.y +
-                 0.09848857801 * self.scaling * math.sin(math.radians(self.heading + 24))),
-                radius=0.05 * self.scaling,
-                color='white', lw=None)
-            self.eyel = plt.Circle(
-                (self.x + 0.08762257748 * self.scaling * math.cos(math.radians(self.heading + 156)), self.y +
-                 0.08762257748 * self.scaling * math.sin(math.radians(self.heading + 156))),
-                radius=0.05 * self.scaling,
-                color='white', lw=None)
-            self.pupilr = plt.Circle(
-                (self.x + 0.09848857801 * self.scaling * math.cos(math.radians(self.heading + 24)), self.y +
-                 0.09848857801 * self.scaling * math.sin(math.radians(self.heading + 24))),
-                radius=0.02 * self.scaling,
-                color='black', lw=None)
-            self.pupill = plt.Circle(
-                (self.x + 0.08762257748 * self.scaling * math.cos(math.radians(self.heading + 156)), self.y +
-                 0.08762257748 * self.scaling * math.sin(math.radians(self.heading + 156))),
-                radius=0.02 * self.scaling,
-                color='black', lw=None)
+        self.centerPt = plt.Circle((self.x, self.y), radius=0.01 * self.scaling, color='black')
 
-        centerPt = plt.Circle((self.x, self.y), radius=0.01 * self.scaling, color='black')
-
-        self.frontTriangle = plt.Polygon(((self.x + 0.24 * math.cos(math.radians(self.heading + 90)) * self.scaling,
-                                           self.y + 0.24 * math.sin(math.radians(self.heading + 90)) * self.scaling),
-                                          (self.x + 0.18172781845 * math.cos(
-                                              math.radians(self.heading + 82)) * self.scaling,
-                                           self.y + 0.18172781845 * math.sin(
-                                               math.radians(self.heading + 82)) * self.scaling),
-                                          (self.x + 0.18172781845 * math.cos(
-                                              math.radians(self.heading + 98)) * self.scaling,
-                                           self.y + 0.18172781845 * math.sin(
-                                               math.radians(self.heading + 98)) * self.scaling)),
-                                         fill=True, color='firebrick')
+        self.frontTriangle = plt.Polygon(((0, 0), (0, 0)), fill=True, color='firebrick')
 
         # so the wheels can rotate
         self.wheelHolefr = plt.Circle(
@@ -259,7 +175,7 @@ class Robot:
             radius=0.055, color='darkgrey')
 
         self.ax.add_patch(self.body)
-        self.ax.add_patch(centerPt)
+        self.ax.add_patch(self.centerPt)
         self.ax.add_patch(self.frontTriangle)
         self.ax.add_patch(self.wheelHolefr)
         self.ax.add_patch(self.wheelHolebr)
@@ -284,10 +200,13 @@ class Robot:
     # --- Drawing and Updates --- #
     def update(self):
         self.velocity = self.maxVelocity if self.velocity > self.maxVelocity else self.velocity
+        self.velocityAngle += 3
         self.dx = self.velocity * math.sin(math.radians(self.velocityAngle))
         self.dy = self.velocity * math.cos(math.radians(self.velocityAngle))
         self.x += self.dx
         self.y += self.dy
+
+        self.heading += 0
 
     def draw(self, ax):
         """
@@ -302,19 +221,25 @@ class Robot:
                           width=0.30 * self.scaling,
                           height=0.5 * self.scaling, angle=self.heading)
             # r=right, l=left, f=front, b=back
-            self.wheelfr.set(xy=(self.x + 0.25 * self.scaling, self.y + 0.25 * self.scaling),
-                             width=-0.1 * self.scaling,
-                             height=-0.2 * self.scaling, angle=self.heading, lw=0.1,
+            self.wheelfr.set(xy=(self.x + (0.25 * math.cos(math.radians(self.heading + 36.8698976)) - 0.05) *
+                                 self.scaling,
+                                 self.y + (0.25 * math.sin(math.radians(self.heading + 36.8698976)) - 0.1) *
+                                 self.scaling),
+                             width=0.1 * self.scaling,
+                             height=0.2 * self.scaling, angle=self.heading, lw=0.1,
                              color='black', hatch='////////', fill=False)
-            self.wheelbr.set(xy=(self.x + 0.25 * self.scaling, self.y - 0.25 * self.scaling),
-                             width=-0.1 * self.scaling,
+            self.wheelbr.set(xy=(self.x + 0.15, self.y - 0.25),
+                             width=0.1 * self.scaling,
                              height=0.2 * self.scaling, angle=self.heading, lw=0.1,
                              color='black', hatch='\\\\\\\\\\\\\\\\\\', fill=False)
-            self.wheelfl.set(xy=(self.x - 0.25 * self.scaling, self.y + 0.25 * self.scaling),
+            self.wheelfl.set(xy=(self.x - 0.25, self.y + 0.05),
                              width=0.1 * self.scaling,
-                             height=-0.2 * self.scaling, angle=self.heading, lw=0.1,
+                             height=0.2 * self.scaling, angle=self.heading, lw=0.1,
                              color='black', hatch='\\\\\\\\\\\\\\\\\\', fill=False)
-            self.wheelbl.set(xy=(self.x - 0.25 * self.scaling, self.y - 0.25 * self.scaling),
+            self.wheelbl.set(xy=(self.x + (0.25 * math.cos(math.radians(self.heading + 216.8698976)) - 0.05) *
+                                 self.scaling,
+                                 self.y + (0.25 * math.sin(math.radians(self.heading + 216.8698976)) - 0.1) *
+                                 self.scaling),
                              width=0.1 * self.scaling,
                              height=0.2 * self.scaling, angle=self.heading, lw=0.1,
                              color='black', hatch='////////', fill=False)
@@ -334,9 +259,7 @@ class Robot:
                 center=(self.x + 0.19235384061 * self.scaling * math.cos(math.radians(self.heading + 110)), self.y +
                         0.19235384061 * self.scaling *
                         math.sin(math.radians(self.heading + 110))), radius=0.02 * self.scaling)
-
-            # bodytrans = transforms.Affine2D().rotate_deg_around(self.x, self.y, self.heading).translate(self.dx, self.dy) + self.ax.transData
-            # self.body.set_transform(bodytrans)
+            self.centerPt.set(center=(self.x, self.y))
 
             if self.frontTriangle.get_visible():
                 # setting parts of the diffy swerve to not be visible
@@ -345,17 +268,37 @@ class Robot:
                 self.wheelHolebr.set_visible(False)
                 self.wheelHolefl.set_visible(False)
                 self.wheelHolebl.set_visible(False)
-                return self.body, self.wheelfr, self.wheelbr, self.wheelfl, self.wheelbl, self.eyer, self.eyel, self.pupilr, self.pupill, self.frontTriangle, self.wheelHolefr, self.wheelHolebr, self.wheelHolefl, self.wheelHolebl
-            return self.body, self.wheelfr, self.wheelbr, self.wheelfl, self.wheelbl, self.eyer, self.eyel, self.pupilr, self.pupill
+                return self.body, self.wheelfr, self.wheelbr, self.wheelfl, self.wheelbl, self.eyer, self.eyel, self.pupilr, self.pupill, self.frontTriangle, self.wheelHolefr, self.wheelHolebr, self.wheelHolefl, self.wheelHolebl, self.centerPt
+            return self.body, self.wheelfr, self.wheelbr, self.wheelfl, self.wheelbl, self.eyer, self.eyel, self.pupilr, self.pupill, self.centerPt
 
         else:
             self.body.set(xy=(self.x - 0.25 * self.scaling, self.y - 0.25 * self.scaling),
                           width=0.5 * self.scaling,
                           height=0.5 * self.scaling, angle=self.heading)
             # r=right, l=left, f=front, b=back
+            self.wheelHolefr.set(
+                center=(self.x + 0.24234531148 * math.cos(math.radians(self.heading + 45)) * self.scaling,
+                        self.y + 0.24234531148 * math.sin(
+                            math.radians(self.heading + 45)) * self.scaling),
+                radius=0.055 * self.scaling, visible=True)
+            self.wheelHolebr.set(
+                center=(self.x + 0.24234531148 * math.cos(math.radians(self.heading + 315)) * self.scaling,
+                        self.y + 0.24234531148 * math.sin(
+                            math.radians(self.heading + 315)) * self.scaling),
+                radius=0.055 * self.scaling, visible=True)
+            self.wheelHolefl.set(
+                center=(self.x + 0.23234531148 * math.cos(math.radians(self.heading + 133)) * self.scaling,
+                        self.y + 0.23234531148 * math.sin(
+                            math.radians(self.heading + 133)) * self.scaling),
+                radius=0.055 * self.scaling, visible=True)
+            self.wheelHolebl.set(
+                center=(self.x + 0.23234531148 * math.cos(math.radians(self.heading + 226)) * self.scaling,
+                        self.y + 0.23234531148 * math.sin(
+                            math.radians(self.heading + 226)) * self.scaling),
+                radius=0.055 * self.scaling, visible=True)
             self.wheelfr.set(xy=(self.x + 0.1875 * self.scaling, self.y + (0.12) * self.scaling),
                              width=-0.05 * self.scaling,
-                             height=0.1 * self.scaling, lw=None, fill=True)
+                             height=0.1 * self.scaling, lw=None, fill=True, visible=True)
             self.wheelbr.set(xy=(self.x + 0.1875 * self.scaling, self.y - (0.12) * self.scaling),
                              width=-0.05 * self.scaling,
                              height=-0.1 * self.scaling, lw=None, fill=True)
@@ -366,20 +309,20 @@ class Robot:
                              width=0.05 * self.scaling,
                              height=-0.1 * self.scaling, lw=None, fill=True)
             self.eyer.set(
-                xy=(self.x + 0.09848857801 * self.scaling * math.cos(math.radians(self.heading + 24)), self.y +
-                    0.09848857801 * self.scaling * math.sin(math.radians(self.heading + 24))),
+                center=(self.x + 0.09848857801 * self.scaling * math.cos(math.radians(self.heading + 24)), self.y +
+                        0.09848857801 * self.scaling * math.sin(math.radians(self.heading + 24))),
                 radius=0.05 * self.scaling)
             self.eyel.set(
-                xy=(self.x + 0.08762257748 * self.scaling * math.cos(math.radians(self.heading + 156)), self.y +
-                    0.08762257748 * self.scaling * math.sin(math.radians(self.heading + 156))),
+                center=(self.x + 0.08762257748 * self.scaling * math.cos(math.radians(self.heading + 156)), self.y +
+                        0.08762257748 * self.scaling * math.sin(math.radians(self.heading + 156))),
                 radius=0.05 * self.scaling)
             self.pupilr.set(
-                xy=(self.x + 0.09848857801 * self.scaling * math.cos(math.radians(self.heading + 24)), self.y +
-                    0.09848857801 * self.scaling * math.sin(math.radians(self.heading + 24))),
+                center=(self.x + 0.09848857801 * self.scaling * math.cos(math.radians(self.heading + 24)), self.y +
+                        0.09848857801 * self.scaling * math.sin(math.radians(self.heading + 24))),
                 radius=0.02 * self.scaling)
             self.pupill.set(
-                xy=(self.x + 0.08762257748 * self.scaling * math.cos(math.radians(self.heading + 156)), self.y +
-                    0.08762257748 * self.scaling * math.sin(math.radians(self.heading + 156))),
+                center=(self.x + 0.08762257748 * self.scaling * math.cos(math.radians(self.heading + 156)), self.y +
+                        0.08762257748 * self.scaling * math.sin(math.radians(self.heading + 156))),
                 radius=0.02 * self.scaling)
             self.frontTriangle.set(xy=((self.x + 0.24 * math.cos(math.radians(self.heading + 90)) * self.scaling,
                                         self.y + 0.24 * math.sin(math.radians(self.heading + 90)) * self.scaling),
@@ -390,24 +333,10 @@ class Robot:
                                        (self.x + 0.18172781845 * math.cos(
                                            math.radians(self.heading + 98)) * self.scaling,
                                         self.y + 0.18172781845 * math.sin(
-                                            math.radians(self.heading + 98)) * self.scaling)), visibility=True)
-            self.wheelHolefr.set(xy=(self.x + 0.24234531148 * math.cos(math.radians(self.heading + 45)) * self.scaling,
-                                     self.y + 0.24234531148 * math.sin(
-                                         math.radians(self.heading + 45)) * self.scaling),
-                                 radius=0.055 * self.scaling, visibility=True)
-            self.wheelHolebr.set(xy=(self.x + 0.24234531148 * math.cos(math.radians(self.heading + 315)) * self.scaling,
-                                     self.y + 0.24234531148 * math.sin(
-                                         math.radians(self.heading + 315)) * self.scaling),
-                                 radius=0.055 * self.scaling, visibility=True)
-            self.wheelHolefl.set(xy=(self.x + 0.23234531148 * math.cos(math.radians(self.heading + 133)) * self.scaling,
-                                     self.y + 0.23234531148 * math.sin(
-                                         math.radians(self.heading + 133)) * self.scaling),
-                                 radius=0.055 * self.scaling, visibility=True)
-            self.wheelHolebl.set(xy=(self.x + 0.23234531148 * math.cos(math.radians(self.heading + 226)) * self.scaling,
-                                     self.y + 0.23234531148 * math.sin(
-                                         math.radians(self.heading + 226)) * self.scaling),
-                                 radius=0.055 * self.scaling, visibility=True)
-            return self.body, self.wheelfr, self.wheelbr, self.wheelfl, self.wheelbl, self.eyer, self.eyel, self.pupilr, self.pupill, self.frontTriangle, self.wheelHolefr, self.wheelHolebr, self.wheelHolefl, self.wheelHolebl
+                                            math.radians(self.heading + 98)) * self.scaling)), visible=True)
+            self.centerPt.set(center=(self.x, self.y))
+
+            return self.body, self.wheelfr, self.wheelbr, self.wheelfl, self.wheelbl, self.eyer, self.eyel, self.pupilr, self.pupill, self.frontTriangle, self.wheelHolefr, self.wheelHolebr, self.wheelHolefl, self.wheelHolebl, self.centerPt
 
 
 # do I really need a comment?
