@@ -13,6 +13,8 @@ from functools import partial
 # because I'll probably need it
 import math
 
+# so that the fps doesn't matter
+import time
 
 # this was in the previous version
 # idk why
@@ -50,9 +52,51 @@ class Waypoint:
         return self.x, self.y
 
 
-path = [Waypoint(0, 0), Waypoint(0.571194595265405, -0.4277145118491421), Waypoint(1.1417537280142898,
-        -0.8531042347260006)]
-
+path = [
+    Waypoint(0.0, 0.0),
+    Waypoint(0.571194595265405, -0.4277145118491421),
+    Waypoint(1.1417537280142898, -0.8531042347260006),
+    Waypoint(1.7098876452457967, -1.2696346390611464),
+    Waypoint(2.2705328851607995, -1.6588899151216996),
+    Waypoint(2.8121159420106827, -1.9791445882187304),
+    Waypoint(3.314589274316711, -2.159795566252656),
+    Waypoint(3.7538316863009027, -2.1224619985315876),
+    Waypoint(4.112485112342358, -1.8323249172947023),
+    Waypoint(4.383456805594431, -1.3292669972090994),
+    Waypoint(4.557386228943757, -0.6928302521681386),
+    Waypoint(4.617455513800438, 0.00274597627737883),
+    Waypoint(4.55408382321606, 0.6984486966257434),
+    Waypoint(4.376054025556597, 1.3330664239172116),
+    Waypoint(4.096280073621794, 1.827159263675668),
+    Waypoint(3.719737492364894, 2.097949296701878),
+    Waypoint(3.25277928312066, 2.108933125822431),
+    Waypoint(2.7154386886417314, 1.9004760368018616),
+    Waypoint(2.1347012144725985, 1.552342808106984),
+    Waypoint(1.5324590525923942, 1.134035376721349),
+    Waypoint(0.9214084611203568, 0.6867933269918683),
+    Waypoint(0.30732366808208345, 0.22955002391894264),
+    Waypoint(-0.3075127599907512, -0.2301742560363831),
+    Waypoint(-0.9218413719658775, -0.6882173194028102),
+    Waypoint(-1.5334674079795052, -1.1373288016589413),
+    Waypoint(-2.1365993767877467, -1.5584414896876835),
+    Waypoint(-2.7180981380280307, -1.9086314914221845),
+    Waypoint(-3.2552809639439704, -2.1153141204181285),
+    Waypoint(-3.721102967810494, -2.0979137913841046),
+    Waypoint(-4.096907306768644, -1.8206318841755131),
+    Waypoint(-4.377088212533404, -1.324440752295139),
+    Waypoint(-4.555249804461285, -0.6910016662308593),
+    Waypoint(-4.617336323713965, 0.003734984720118972),
+    Waypoint(-4.555948690867849, 0.7001491248072772),
+    Waypoint(-4.382109193278264, 1.3376838311365633),
+    Waypoint(-4.111620918085742, 1.8386823176628544),
+    Waypoint(-3.7524648889185794, 2.1224985058331005),
+    Waypoint(-3.3123191098095615, 2.153588702898333),
+    Waypoint(-2.80975246649598, 1.9712114570096653),
+    Waypoint(-2.268856462266256, 1.652958931009528),
+    Waypoint(-1.709001159778989, 1.2664395490411673),
+    Waypoint(-1.1413833971013372, 0.8517589252820573),
+    Waypoint(-0.5710732645795573, 0.4272721367616211),
+]
 
 def convert_to_list(list_waypoints: list[Waypoint] = path) -> list[tuple[float, float]]:
     """Converts the list of waypoints to a list of tuples with the waypoint coordinates."""
@@ -91,9 +135,10 @@ class Animation:
         # --- drawing stuff --- #
 
         # the path the robot is following drawn
-        path_for_graph = np.array(convert_to_list())
-        self.drawn_path = plt.plot(path_for_graph[:, 0], path_for_graph[:, 1], animated=True, color='black',
-                                   solid_capstyle='round', linewidth=1)
+        path_for_graph = np.array(convert_to_list() + [path[0].get_coord()] if len(path) != 0 else convert_to_list())
+        self.drawn_path, = plt.plot(path_for_graph[:, 0], path_for_graph[:, 1], linestyle=(0, (5, 1)), animated=True,
+                                    color=(0, 0, 0, 0.35), dash_capstyle='butt', dash_joinstyle="round", linewidth=1.5,
+                                    zorder=1)
 
         # the robot -_-
         self.robot = Robot(self.ax)
@@ -104,13 +149,13 @@ class Animation:
         self.trail_y = [self.robot.y - 0.25 * math.cos(math.radians(-self.robot.heading))]
 
         # the trail of how the robot has moved
-        self.trail, = plt.plot(self.trail_x, self.trail_y, "-", color=(1, 0.79, 0, 0.6), linewidth=4, zorder=1)
+        self.trail, = plt.plot(self.trail_x, self.trail_y, "-", color=(1, 0.79, 0, 0.6), linewidth=5, zorder=1)
 
     def display(self):
         # This is how we display the animation, where it basically updates every frame
         anim = animation.FuncAnimation(fig=self.fig, func=partial(updateFrame, ax=self.ax, robot=self.robot,
-                                       trailX=self.trail_x, trailY=self.trail_y, trail=self.trail), blit=True,
-                                       cache_frame_data=False, interval=10)
+                                       trailX=self.trail_x, trailY=self.trail_y, trail=self.trail,
+                                       drawn_path=self.drawn_path), blit=True, cache_frame_data=False, interval=10)
         # showing the plot
         plt.show()
 
@@ -121,9 +166,9 @@ class Robot:
     other information about the robot, it also updates and drawing the robot
 
     """
-    def __init__(self, ax, x: float = 0, y: float = 0, heading: float = 0, MAX_VELOCITY: float = 0.1,
+    def __init__(self, ax, x: float = 0, y: float = 0, heading: float = 0, MAX_VELOCITY: float = 0.2,
                  MAX_ACCELERATION: float = 1, MAX_TURN_VELOCITY: float = 3.35, MAX_TURN_ACCELERATION: float = 1,
-                 scaling: float = 1, isdiffy: bool = True):
+                 scaling: float = 1, isdiffy: bool = True, using_dt: bool = True):
         """
         Initializes all of the positional, velocity, acceleration, maximum, and draw shape variables.
         Args:
@@ -136,8 +181,10 @@ class Robot:
             MAX_TURN_VELOCITY: maximum rate of change in velocity angle
             scaling: how much bigger or smaller the robot is drawn
             isdiffy: if the robot is drawn with a differential swerve or mecanum drivetrain
+            using_dt: adds error to robots movements because of floating-point operations
         """
         # --- instance variables --- #
+
         # the plot axis
         self.ax = ax
 
@@ -162,14 +209,27 @@ class Robot:
         self.MAX_TURN_VELOCITY = MAX_TURN_VELOCITY
         self.MAX_TURN_ACCELERATION = MAX_TURN_ACCELERATION
 
+
+
         # for drawing
         # to scale the robot shown by a factor of scaling
         self.scaling = scaling
         self.is_diffy = isdiffy
 
         # --- drawing variables --- #
+
         # initializes the variables used to draw the robot
         self.init_ui()
+
+        # 1000 milliseconds in a second, and I found the average frame time was around 30 ms
+        # so I am dividing them to get the fps which scales the velocity so that it is not
+        # effected by the dt
+        self.FPS = 1000 / 30
+
+        self.using_dt = using_dt
+
+        # so that the robot moves at a constant speed regardless of the fps
+        self.time = time.time()
 
     def init_ui(self):
         """
@@ -231,23 +291,51 @@ class Robot:
         This function does not draw the robot, the draw function does that.
         This function is called by the draw function before drawing the robot.
         """
+        # also we're just going to call it a feature: the small amount of error
+        # compounded from floating-point operations
+
+        # it 'imitates' real life
+
+        # if using_dr is True, then this var will account for the computer framerate
+        # and throttle the speed of the robot
+        account_fps = self.FPS * (time.time() - self.time) if self.using_dt else 1
+
+        # --- updating position --- #
+
+        # changing the robot position
+        self.x += self.velocity * account_fps * math.sin(math.radians(-self.velocity_angle))
+        self.y += self.velocity * account_fps * math.cos(math.radians(self.velocity_angle))
+
+        # going to add velocity and acceleration to this later
+        self.heading += 0
+
+        # --- updating velocities --- #
+
+        # updating the velocities so that they don't exceed the maximums
+        self.velocity = min(self.velocity + self.acceleration * account_fps, self.MAX_VELOCITY)
+        self.turn_velocity = math.copysign(min(abs(self.turn_velocity + self.turn_acceleration * account_fps),
+                                               self.MAX_TURN_VELOCITY), self.turn_velocity)
+        # turn velocity is how much the velocity angle changes by
+        self.velocity_angle += self.turn_velocity * account_fps
+
+        # so that the velocity always stays positive
+        if self.velocity < 0:
+            self.velocity *= -1
+            self.velocity_angle += 180
+
+        self.velocity_angle %= 360
+
+        # --- updating accelerations --- #
+
         # idk what to do with acceleration, but there will probably be some acceleration function
         # based off of velocity or maybe its changed in a goTo function or something similar (?)
         self.acceleration = 0
         self.turn_acceleration = 0
 
-        self.velocity = min(self.velocity + self.acceleration, self.MAX_VELOCITY)
-        self.turn_velocity = math.copysign(min(abs(self.turn_velocity + self.turn_acceleration),
-                                           self.MAX_TURN_VELOCITY), self.turn_velocity)
-        # turn velocity is how much the velocity angle changes by
-        self.velocity_angle += self.turn_velocity
+        # --- updating timer for dt --- #
 
-        # changing the robot position
-        self.x += self.velocity * math.sin(math.radians(-self.velocity_angle))
-        self.y += self.velocity * math.cos(math.radians(self.velocity_angle))
-
-        # going to add velocity and acceleration to this later
-        self.heading += 0
+        # getting the current time
+        self.time = time.time()
 
     def draw(self, ax):
         """
@@ -259,7 +347,7 @@ class Robot:
             ax: the axis to add patches to so the shapes can be drawn
         """
         self.update()
-        
+
         if not self.is_diffy:
             # draws the mecanum drivetrain
             return self.draw_mecanum()
@@ -332,7 +420,7 @@ class Robot:
             self.wheel_hole_bl.set_visible(False)
             return self.body, self.wheel_fr, self.wheel_br, self.wheel_fl, self.wheel_bl, self.eye_r, self.eye_l, self.pupil_r, self.pupil_l, self.front_triangle, self.wheel_hole_fr, self.wheel_hole_br, self.wheel_hole_fl, self.wheel_hole_bl, self.center_pt
         return self.body, self.wheel_fr, self.wheel_br, self.wheel_fl, self.wheel_bl, self.eye_r, self.eye_l, self.pupil_r, self.pupil_l, self.center_pt
-    
+
     # hopefully no one including me should have to ever go through this code again
     def draw_diffy(self):
         """
@@ -411,7 +499,7 @@ class Robot:
 
 
 # do I really need a comment?
-def updateFrame(frame, ax, robot: Robot, trailX: list[float], trailY: list[float], trail):
+def updateFrame(frame, ax, robot: Robot, trailX: list[float], trailY: list[float], trail, drawn_path):
     # updating the robot trail
     # the trig is so that the trail comes out of the back of the robot
     trailX.append(robot.x - 0.25 * math.sin(math.radians(-robot.heading)))
@@ -420,8 +508,11 @@ def updateFrame(frame, ax, robot: Robot, trailX: list[float], trailY: list[float
     # combining the trail x and y to show the trail
     trail.set_data(trailX, trailY)
 
+    path_for_graph = np.array(convert_to_list() + [path[0].get_coord()] if len(path) != 0 else convert_to_list())
+    drawn_path.set_data(path_for_graph[:, 0], path_for_graph[:, 1])
+
     # the robot draws itself
-    return (trail,) + robot.draw(ax)
+    return (drawn_path, trail) + robot.draw(ax)
 
 
 # --------------- MAIN --------------- #
