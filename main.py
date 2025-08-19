@@ -1,6 +1,8 @@
 # --------------- DEPENDENCIES --------------- #
 # showing the animation with matplotlib
 import matplotlib.pyplot as plt
+from matplotlib.collections import LineCollection
+from matplotlib.colors import LinearSegmentedColormap
 import matplotlib.animation as animation
 from matplotlib.widgets import Button
 
@@ -98,6 +100,7 @@ path = [
     Waypoint(-0.5710732645795573, 0.4272721367616211),
 ]
 
+
 def convert_to_list(list_waypoints: list[Waypoint] = path) -> list[tuple[float, float]]:
     """Converts the list of waypoints to a list of tuples with the waypoint coordinates."""
     return [waypoint.get_coord() for waypoint in list_waypoints]
@@ -143,19 +146,29 @@ class Animation:
         # the robot -_-
         self.robot = Robot(self.ax)
 
+        self.colors = []
+
+        self.alpha = 0.5 #0.33333
+        # for the color of the line at different velocities
+        self.cmap = LinearSegmentedColormap.from_list("velocity gradient", [(1, 0.16, 0, self.alpha), (1, 0.79, 0, self.alpha), (0.47, 1, 0, self.alpha)])
+
         # The trail X and Y will be combined to draw the trail
         # the trig is so the trail comes out of the back of the robot
         self.trail_x = [self.robot.x - 0.25 * math.sin(math.radians(-self.robot.heading))]
         self.trail_y = [self.robot.y - 0.25 * math.cos(math.radians(-self.robot.heading))]
 
         # the trail of how the robot has moved
-        self.trail, = plt.plot(self.trail_x, self.trail_y, "-", color=(1, 0.79, 0, 0.6), linewidth=5, zorder=1)
+        self.trail = LineCollection([], color=(1, 0.79, 0, 0.33333), linewidth=5, zorder=1, animated=True)
+
+        # I'm using collections so the trail can overlap itself
+        self.ax.add_collection(self.trail)
 
     def display(self):
         # This is how we display the animation, where it basically updates every frame
         anim = animation.FuncAnimation(fig=self.fig, func=partial(updateFrame, ax=self.ax, robot=self.robot,
                                        trailX=self.trail_x, trailY=self.trail_y, trail=self.trail,
-                                       drawn_path=self.drawn_path), blit=True, cache_frame_data=False, interval=10)
+                                       drawn_path=self.drawn_path, colors=self.colors, cmap=self.cmap),
+                                       blit=True, cache_frame_data=False, interval=10)
         # showing the plot
         plt.show()
 
@@ -166,7 +179,7 @@ class Robot:
     other information about the robot, it also updates and drawing the robot
 
     """
-    def __init__(self, ax, x: float = 0, y: float = 0, heading: float = 0, MAX_VELOCITY: float = 0.2,
+    def __init__(self, ax, x: float = 0, y: float = 0, heading: float = 0, MAX_VELOCITY: float = 20,
                  MAX_ACCELERATION: float = 1, MAX_TURN_VELOCITY: float = 3.35, MAX_TURN_ACCELERATION: float = 1,
                  scaling: float = 1, isdiffy: bool = True, using_dt: bool = True):
         """
@@ -181,7 +194,8 @@ class Robot:
             MAX_TURN_VELOCITY: maximum rate of change in velocity angle
             scaling: how much bigger or smaller the robot is drawn
             isdiffy: if the robot is drawn with a differential swerve or mecanum drivetrain
-            using_dt: adds error to robots movements because of floating-point operations
+            using_dt: it makes the robots velocity independent of the fps
+                      it also adds error to robots movements because of floating-point operations
         """
         # --- instance variables --- #
 
@@ -194,7 +208,8 @@ class Robot:
         self.heading = heading
 
         # I'm using polar coordinates for velocity for simplicity
-        self.velocity = 0.1
+        # the velocity is 100 times than what is being drawn, this is accounted for when changing position
+        self.velocity = 10
         # how fast the velocity angle is changing
         self.turn_velocity = 3.35
         self.velocity_angle = 0
@@ -303,8 +318,8 @@ class Robot:
         # --- updating position --- #
 
         # changing the robot position
-        self.x += self.velocity * account_fps * math.sin(math.radians(-self.velocity_angle))
-        self.y += self.velocity * account_fps * math.cos(math.radians(self.velocity_angle))
+        self.x += self.velocity / 100 * account_fps * math.sin(math.radians(-self.velocity_angle))
+        self.y += self.velocity / 100 * account_fps * math.cos(math.radians(self.velocity_angle))
 
         # going to add velocity and acceleration to this later
         self.heading += 0
@@ -499,14 +514,22 @@ class Robot:
 
 
 # do I really need a comment?
-def updateFrame(frame, ax, robot: Robot, trailX: list[float], trailY: list[float], trail, drawn_path):
+def updateFrame(frame, ax, robot: Robot, trailX: list[float], trailY: list[float], trail, drawn_path,
+                colors: list[float], cmap):
     # updating the robot trail
     # the trig is so that the trail comes out of the back of the robot
     trailX.append(robot.x - 0.25 * math.sin(math.radians(-robot.heading)))
     trailY.append(robot.y - 0.25 * math.cos(math.radians(-robot.heading)))
 
     # combining the trail x and y to show the trail
-    trail.set_data(trailX, trailY)
+    segments = [[(trailX[i], trailY[i]), (trailX[i + 1], trailY[i + 1])] for i in range(len(trailX) - 1)]
+
+    # adding the current velocity color to the colors list
+    colors.append(cmap(robot.velocity/robot.MAX_VELOCITY))
+
+    # setting the segments and colors
+    trail.set_segments(segments)
+    trail.set_color(colors)
 
     path_for_graph = np.array(convert_to_list() + [path[0].get_coord()] if len(path) != 0 else convert_to_list())
     drawn_path.set_data(path_for_graph[:, 0], path_for_graph[:, 1])
